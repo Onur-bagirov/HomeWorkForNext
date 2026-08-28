@@ -1,0 +1,11 @@
+Model Information:
+* title:	E-Scooter
+* source:	https://sketchfab.com/3d-models/e-scooter-ff44e222b5f943548a59d1a929664a57
+* author:	rollthebryce (https://sketchfab.com/rollthebryce)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "E-Scooter" (https://sketchfab.com/3d-models/e-scooter-ff44e222b5f943548a59d1a929664a57) by rollthebryce (https://sketchfab.com/rollthebryce) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,30 +1,32 @@
 "use client"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
     Field,
     FieldDescription,
     FieldGroup,
     FieldLabel,
-    FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { signupFormSchema, SignupFormSchema } from "./singup-form.schema"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { api } from "@/shared/api/api-instance"
+
 
 export function SignupForm({
     className,
     ...props
 }: React.ComponentProps<"form">) {
-
-
+    const router = useRouter();
 
     const {
         register,
         handleSubmit,
+        setError,
         formState: { errors },
     } = useForm<SignupFormSchema>({
         resolver: zodResolver(signupFormSchema),
@@ -34,65 +36,124 @@ export function SignupForm({
             password: "",
             confirmPassword: "",
         },
-    })
+    })     
 
-    const onSubmit = (data: SignupFormSchema) => {
-        console.log(data)
+    const handleSignupWithGitHub = async () => {
+        try {
+            const result = await signIn("github", { redirect: true, callbackUrl: "/" });
+            if (result?.error) {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const handleSignupWithGoogle = async () => {
+        try {
+            const result = await signIn("google", { redirect: true, callbackUrl: "/auth/signin" });
+            if (result?.error) {
+                throw new Error(result.error);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    const onSubmit = async (data: SignupFormSchema) => {
+        try {
+            const response = await api.post("/users", data);
+
+            if (response.status === 409) {
+                setError("email", { message: response.data.error });
+                return;
+            }
+
+            if (response.status !== 201) {
+                throw new Error(response.data.error || "Failed to create user");
+            }
+
+            router.push("/auth/signin");
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+        }
     }
 
     return (
-        <form className={cn("flex flex-col gap-6", className)} {...props} onSubmit={handleSubmit(onSubmit)}>
-            <FieldGroup>
+        <form
+            className={cn(
+                "flex flex-col gap-2 rounded-[20px] border border-white/40 bg-[rgba(178,235,242,0.35)] p-8 backdrop-blur-sm",
+                className
+            )}
+            {...props}
+            onSubmit={handleSubmit(onSubmit)}
+        >
+            <FieldGroup className="gap-2">
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">Create your account</h1>
-                    <p className="text-sm text-balance text-muted-foreground">
+                    <h1 className="text-2xl font-bold tracking-wide text-[#1A1A1A]">
+                        Create your account
+                    </h1>
+                    <p className="text-sm text-[#546E7A]">
                         Fill in the form below to create your account
                     </p>
                 </div>
                 <Field>
-                    <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                    <Input id="name" {...register("name")} type="text" placeholder="John Doe" required />
-                    {errors.name && <p className="text-red-500">{errors.name.message}</p>}
+                    <FieldLabel htmlFor="name" className="text-[#546E7A]">Full Name</FieldLabel>
+                    <Input id="name" {...register("name")} type="text" variant="auth" placeholder="John Doe" required />
+                    {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
                 </Field>
                 <Field>
-                    <FieldLabel htmlFor="email">Email</FieldLabel>
-                    <Input id="email" {...register("email")} type="email" placeholder="m@example.com" required />
-                    {errors.email && <p className="text-red-500">{errors.email.message}</p>}
-                    <FieldDescription>
+                    <FieldLabel htmlFor="email" className="text-[#546E7A]">Email</FieldLabel>
+                    <Input id="email" {...register("email")} type="email" variant="auth" placeholder="m@example.com" required />
+                    {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+                    <FieldDescription className="text-[#78909C]">
                         We&apos;ll use this to contact you. We will not share your email
                         with anyone else.
                     </FieldDescription>
                 </Field>
                 <Field>
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
-                    <Input id="password" {...register("password")} type="password" required />
-                    {errors.password && <p className="text-red-500">{errors.password.message}</p>}
-                    <FieldDescription>
+                    <FieldLabel htmlFor="password" className="text-[#546E7A]">Password</FieldLabel>
+                    <Input id="password" {...register("password")} type="password" variant="auth" required />
+                    {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+                    <FieldDescription className="text-[#78909C]">
                         Must be at least 8 characters long.
                     </FieldDescription>
                 </Field>
                 <Field>
-                    <FieldLabel htmlFor="confirm-password">Confirm Password</FieldLabel>
-                    <Input id="confirm-password" {...register("confirmPassword")} type="password" required />
-                    {errors.confirmPassword && <p className="text-red-500">{errors.confirmPassword.message}</p>}
-                    <FieldDescription>Please confirm your password.</FieldDescription>
+                    <FieldLabel htmlFor="confirm-password" className="text-[#546E7A]">Confirm Password</FieldLabel>
+                    <Input id="confirm-password" {...register("confirmPassword")} type="password" variant="auth" required />
+                    {errors.confirmPassword && <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>}
+                    <FieldDescription className="text-[#78909C]">Please confirm your password.</FieldDescription>
                 </Field>
                 <Field>
-                    <Button type="submit">Create Account</Button>
+                    <Button type="submit" variant="authPrimary" className="w-full">
+                        Create Account
+                    </Button>
                 </Field>
-                <FieldSeparator>Or continue with</FieldSeparator>
+                <span className="text-sm text-[#546E7A] text-center">Or continue with</span>
                 <Field>
-                    <Button variant="outline" type="button" onClick={() => signIn("github", { redirect: true, callbackUrl: "/" })}>
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <path
-                                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
-                                fill="currentColor"
-                            />
-                        </svg>
+                    <Button
+                        type="button"
+                        variant="authOutline"
+                        className="w-full"
+                        onClick={handleSignupWithGitHub}
+                    >
                         Sign up with GitHub
                     </Button>
-                    <FieldDescription className="px-6 text-center">
-                        Already have an account? <Link href="/auth/signin">Sign in</Link>
+                    <Button
+                        type="button"
+                        variant="authOutline"
+                        className="w-full"
+                        onClick={handleSignupWithGoogle}
+                    >
+                        Sign up with Google
+                    </Button>
+                    <FieldDescription className="px-6 text-center text-[#546E7A]">
+                        Already have an account?{" "}
+                        <Link href="/auth/signin" className="font-medium text-[#1A1A1A] underline-offset-4 hover:underline">
+                            Sign in
+                        </Link>
                     </FieldDescription>
                 </Field>
             </FieldGroup>
